@@ -313,13 +313,14 @@ async function start(): Promise<void> {
   const data = await loadParks(visits);
   parks = data.parks;
   updateProgress();
+  // The list doesn't depend on the map, so show it right away.
+  renderList();
 
   parkMap = await createMap(els.map, data);
   layerView = await parkMap.view.whenLayerView(parkMap.layer);
   drawHome();
 
   wireUi();
-  renderList();
 }
 
 start().catch((error) => {

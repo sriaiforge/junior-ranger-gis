@@ -1,3 +1,67 @@
 {
-  "visits": []
+  "visits": [
+    {
+      "parkCode": "noca"
+    },
+    {
+      "parkCode": "yell"
+    },
+    {
+      "parkCode": "inde"
+    },
+    {
+      "parkCode": "pagr"
+    },
+    {
+      "parkCode": "thrb"
+    },
+    {
+      "parkCode": "hagr"
+    },
+    {
+      "parkCode": "gegr"
+    },
+    {
+      "parkCode": "cacl"
+    },
+    {
+      "parkCode": "feha"
+    },
+    {
+      "parkCode": "stli"
+    },
+    {
+      "parkCode": "elis"
+    },
+    {
+      "parkCode": "morr"
+    },
+    {
+      "parkCode": "wori"
+    },
+    {
+      "parkCode": "thri"
+    },
+    {
+      "parkCode": "indu"
+    },
+    {
+      "parkCode": "cuva"
+    },
+    {
+      "parkCode": "care"
+    },
+    {
+      "parkCode": "brca"
+    },
+    {
+      "parkCode": "zion"
+    },
+    {
+      "parkCode": "cany"
+    },
+    {
+      "parkCode": "arch"
+    }
+  ]
 }
