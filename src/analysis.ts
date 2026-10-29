@@ -9,21 +9,25 @@ export const homePoint = new Point({ longitude: HOME.longitude, latitude: HOME.l
 
 export interface NearbyResult {
   buffer: Polygon;
-  /** Park codes of unvisited parks inside the buffer, mapped to miles from home. */
+  /** Park codes of unvisited parks inside the buffer, mapped to miles from the origin. */
   distances: Map<string, number>;
 }
 
 /**
- * Finds unvisited parks within `miles` of home.
+ * Finds unvisited parks within `miles` of a point (home, or a searched place).
  *
- * 1. Build a geodesic buffer (a true-distance circle on the ellipsoid) around home.
+ * 1. Build a geodesic buffer (a true-distance circle on the ellipsoid) around the point.
  * 2. Spatial query: unvisited park points that intersect the buffer.
- * 3. Geodetic distance from home to each result, for sorting.
+ * 3. Geodetic distance from the point to each result, for sorting.
  */
-export async function findUnvisitedNearby(layer: GeoJSONLayer, miles: number): Promise<NearbyResult> {
+export async function findUnvisitedNearby(
+  layer: GeoJSONLayer,
+  origin: Point,
+  miles: number,
+): Promise<NearbyResult> {
   await Promise.all([geodesicBufferOperator.load(), geodeticDistanceOperator.load()]);
 
-  const buffer = geodesicBufferOperator.execute(homePoint, miles, { unit: "miles" });
+  const buffer = geodesicBufferOperator.execute(origin, miles, { unit: "miles" });
   if (!buffer) throw new Error("Could not build the search area.");
 
   const query = layer.createQuery();
@@ -38,7 +42,7 @@ export async function findUnvisitedNearby(layer: GeoJSONLayer, miles: number): P
   const distances = new Map<string, number>();
   for (const feature of features) {
     if (!feature.geometry) continue;
-    const d = geodeticDistanceOperator.execute(homePoint, feature.geometry, { unit: "miles" });
+    const d = geodeticDistanceOperator.execute(origin, feature.geometry, { unit: "miles" });
     distances.set(String(feature.attributes.parkCode), d);
   }
   return { buffer, distances };

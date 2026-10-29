@@ -17,13 +17,18 @@ GeoJSON and spatial analysis, drawing on my background in TypeScript and accessi
   `UniqueValueRenderer` and pop-ups built with Arcade expressions.
 - **Visited / not visited filter.** Uses a client-side `FeatureFilter` on the layer view, plus a
   search by park name or state.
-- **Distance query.** "Unvisited parks within N miles of Woodinville, WA":
-  1. A geodesic buffer around home (`geodesicBufferOperator`): a true-distance circle on the
+- **Distance query.** "Unvisited parks within N miles of" home (Woodinville, WA) or any place:
+  1. A geodesic buffer around the starting point (`geodesicBufferOperator`): a true-distance circle on the
      ellipsoid, not a flat circle in Web Mercator, which would be distorted at this latitude.
   2. A spatial query (`intersects`) for unvisited parks inside the buffer.
-  3. A geodetic distance (`geodeticDistanceOperator`) from home to each result, sorted nearest
+  3. A geodetic distance (`geodeticDistanceOperator`) from the starting point to each result, sorted nearest
      first.
   4. A `FeatureEffect` that dims parks outside the area instead of hiding them.
+- **Search near any place.** Type a city, address or park name to search from there:
+  - A name that starts a Junior Ranger park's name ("Yellowstone", "Glacier") uses that park, so
+    it isn't confused with a town of the same name.
+  - Anything else is geocoded with the ArcGIS World Geocoding Service (`locator.addressToLocations`).
+  - Leave the box blank to search from home.
 - **Accessibility (WCAG 2.2 AA target).**
   - Every map feature is also in an HTML list, so the map isn't the only way to get the information.
   - Visited and unvisited parks differ by shape (circle vs. diamond), not only by color (1.4.1).
@@ -48,6 +53,7 @@ public/data/visited.json ──► src/visited.ts ──────────
 | `src/parks.ts` | Joins visits onto park features |
 | `src/map.ts` | Map, basemap, layer, renderer, pop-up |
 | `src/analysis.ts` | Buffer, spatial query, distance |
+| `src/geocode.ts` | Place name → point (park names, then ArcGIS geocoding) |
 | `src/main.ts` | UI: filters, list, live-region messages |
 | `src/config.ts` | Home location, default radius |
 
@@ -69,6 +75,8 @@ npm run dev
 - **ArcGIS key (optional):** with a free [ArcGIS Location Platform](https://location.arcgis.com/sign-up/)
   account, the map uses the Esri "Outdoor" basemap. Without one, it falls back to OpenStreetMap.
   Restrict the key to your site's URL, because browser keys are visible to anyone who views the page.
+  Place search works either way: with a key it uses the current geocoding service, and without one
+  it uses the public World Geocoder endpoint, which allows anonymous searches that aren't stored.
 
 ## Mark a park as visited
 

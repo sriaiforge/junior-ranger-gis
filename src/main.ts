@@ -11,6 +11,7 @@ import { loadVisits } from "./visited";
 import { loadParks, type Park } from "./parks";
 import { createMap, type ParkMap } from "./map";
 import { findUnvisitedNearby, homePoint, type NearbyResult } from "./analysis";
+import { findPlace, type Place } from "./geocode";
 
 type VisitedFilter = "all" | "visited" | "unvisited";
 
@@ -23,7 +24,7 @@ const els = {
   radius: byId<HTMLInputElement>("radius"),
   nearbyForm: byId<HTMLFormElement>("nearby-form"),
   clearNearby: byId<HTMLButtonElement>("clear-nearby"),
-  homeName: byId<HTMLSpanElement>("home-name"),
+  origin: byId<HTMLInputElement>("origin"),
   map: byId<HTMLDivElement>("map"),
 };
 
@@ -31,6 +32,7 @@ const state = {
   filter: "all" as VisitedFilter,
   search: "",
   nearby: null as NearbyResult | null,
+  nearbyLabel: HOME.name,
 };
 
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -142,7 +144,7 @@ function renderList(): void {
   }
 
   const where = state.nearby
-    ? `${shown.length} unvisited parks within ${els.radius.value} miles of ${HOME.name}, nearest first.`
+    ? `${shown.length} unvisited ${shown.length === 1 ? "park" : "parks"} within ${els.radius.value} miles of ${state.nearbyLabel}, nearest first.`
     : `Showing ${shown.length} of ${parks.length} parks.`;
   announce(where);
 }
@@ -182,13 +184,48 @@ function drawHome(): void {
   );
 }
 
-async function runNearby(miles: number): Promise<void> {
+function removeSearchGraphics(): void {
+  const g = parkMap.view.graphics;
+  g.removeMany(g.filter((x) => x.attributes?.role === "buffer" || x.attributes?.role === "origin").toArray());
+}
+
+/** Blank means home; anything else is geocoded (with a park-name fallback). */
+async function resolveOrigin(text: string): Promise<Place | null> {
+  if (!text.trim()) return { point: homePoint, label: HOME.name };
+  return findPlace(text, parks);
+}
+
+async function runNearby(miles: number, originText: string): Promise<void> {
   announce("Searching…");
-  const result = await findUnvisitedNearby(parkMap.layer, miles);
+  const origin = await resolveOrigin(originText);
+  if (!origin) {
+    announce(`Couldn't find “${originText.trim()}”. Try a city and state, such as Moab, UT.`);
+    els.origin.focus();
+    return;
+  }
+
+  const result = await findUnvisitedNearby(parkMap.layer, origin.point, miles);
   state.nearby = result;
+  state.nearbyLabel = origin.label;
 
   const { view, layer } = parkMap;
-  view.graphics.removeMany(view.graphics.filter((g) => g.attributes?.role === "buffer").toArray());
+  removeSearchGraphics();
+  if (origin.point !== homePoint) {
+    view.graphics.add(
+      new Graphic({
+        geometry: origin.point,
+        attributes: { role: "origin" },
+        symbol: {
+          type: "simple-marker",
+          style: "cross",
+          size: 16,
+          color: "#1d3b8b",
+          outline: { color: "#1d3b8b", width: 3 },
+        },
+        popupTemplate: { title: `Search center: ${origin.label}` },
+      }),
+    );
+  }
   view.graphics.add(
     new Graphic({
       geometry: result.buffer,
@@ -218,11 +255,10 @@ async function runNearby(miles: number): Promise<void> {
 function clearNearby(): void {
   state.nearby = null;
   parkMap.layer.featureEffect = null;
-  const g = parkMap.view.graphics;
-  g.removeMany(g.filter((x) => x.attributes?.role === "buffer").toArray());
+  removeSearchGraphics();
   els.clearNearby.hidden = true;
   renderList();
-  els.radius.focus();
+  els.origin.focus();
 }
 
 function wireUi(): void {
@@ -246,9 +282,11 @@ function wireUi(): void {
     event.preventDefault();
     const miles = els.radius.valueAsNumber;
     if (!Number.isFinite(miles) || miles <= 0) return;
-    runNearby(miles).catch(showError);
+    runNearby(miles, els.origin.value).catch(showError);
   });
   els.clearNearby.addEventListener("click", clearNearby);
+  // Enabled only once the map is ready, so an early submit can't reload the page.
+  els.nearbyForm.querySelector<HTMLButtonElement>('button[type="submit"]')!.disabled = false;
 
   els.list.addEventListener("click", (event) => {
     const button = (event.target as HTMLElement).closest<HTMLButtonElement>("button.park-item");
@@ -268,7 +306,7 @@ function showError(error: unknown): void {
 }
 
 async function start(): Promise<void> {
-  els.homeName.textContent = HOME.name;
+  els.origin.placeholder = `Home (${HOME.name})`;
   els.radius.value = String(DEFAULT_RADIUS_MILES);
 
   const visits = await loadVisits();

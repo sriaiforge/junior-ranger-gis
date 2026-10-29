@@ -51,14 +51,21 @@
         </section>
 
         <section class="controls" aria-labelledby="nearby-heading">
-          <h2 id="nearby-heading">Unvisited parks near home</h2>
+          <h2 id="nearby-heading">Unvisited parks near a place</h2>
           <form id="nearby-form" class="nearby-form">
+            <label class="field" for="origin">
+              Search near
+              <input id="origin" type="text" autocomplete="off" aria-describedby="origin-help" />
+            </label>
+            <p id="origin-help" class="hint">
+              Leave blank for home, or enter a city, address or park name.
+            </p>
             <label class="field" for="radius">
-              <span>Miles from <span id="home-name"></span></span>
+              Distance in miles
               <input id="radius" type="number" min="10" max="3000" step="10" required inputmode="numeric" />
             </label>
             <div class="button-row">
-              <button type="submit">Find parks</button>
+              <button type="submit" disabled>Find parks</button>
               <button type="button" id="clear-nearby" class="secondary" hidden>Clear</button>
             </div>
           </form>
