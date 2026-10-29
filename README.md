@@ -7,7 +7,7 @@ visited and which unvisited parks are within driving range of home.
 **This is a personal learning project.** I built it to learn the ArcGIS Maps SDK for JavaScript,
 GeoJSON and spatial analysis, drawing on my background in TypeScript and accessibility.
 
-**Live map:** _add your GitHub Pages link here_
+**Live map:** https://sriaiforge.github.io/junior-ranger-gis/
 
 ## Features
 
