@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="A personal GIS project mapping National Park Service Junior Ranger sites and which ones I have visited."
+    />
+    <title>Junior Ranger Map</title>
+  </head>
+  <body>
+    <a class="skip-link" href="#park-list-heading">Skip to park list</a>
+
+    <div class="layout">
+      <aside class="panel" aria-labelledby="app-title">
+        <header class="panel-header">
+          <h1 id="app-title">Junior Ranger Map</h1>
+          <p class="subtitle">
+            National Park Service sites with a Junior Ranger program.
+          </p>
+          <p id="progress" class="progress">Loading parks…</p>
+          <ul class="legend" aria-label="Map symbols">
+            <li>
+              <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+                <circle cx="8" cy="8" r="6" fill="#1b7a3d" stroke="#fff" stroke-width="1.5" />
+              </svg>
+              Visited (filled circle)
+            </li>
+            <li>
+              <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+                <path d="M8 1.5 14.5 8 8 14.5 1.5 8Z" fill="#fff" stroke="#8a4b08" stroke-width="2" />
+              </svg>
+              Not visited yet (open diamond)
+            </li>
+          </ul>
+        </header>
+
+        <section class="controls" aria-labelledby="filter-heading">
+          <h2 id="filter-heading">Filter</h2>
+          <fieldset class="segmented">
+            <legend>Show</legend>
+            <label><input type="radio" name="visited-filter" value="all" checked /> All</label>
+            <label><input type="radio" name="visited-filter" value="visited" /> Visited</label>
+            <label><input type="radio" name="visited-filter" value="unvisited" /> Not visited</label>
+          </fieldset>
+          <label class="field" for="search">
+            Search by park name or state
+            <input id="search" type="search" autocomplete="off" placeholder="e.g. Olympic or WA" />
+          </label>
+        </section>
+
+        <section class="controls" aria-labelledby="nearby-heading">
+          <h2 id="nearby-heading">Unvisited parks near home</h2>
+          <form id="nearby-form" class="nearby-form">
+            <label class="field" for="radius">
+              <span>Miles from <span id="home-name"></span></span>
+              <input id="radius" type="number" min="10" max="3000" step="10" required inputmode="numeric" />
+            </label>
+            <div class="button-row">
+              <button type="submit">Find parks</button>
+              <button type="button" id="clear-nearby" class="secondary" hidden>Clear</button>
+            </div>
+          </form>
+        </section>
+
+        <p id="status" class="status" role="status" aria-live="polite"></p>
+
+        <section class="list-section" aria-labelledby="park-list-heading">
+          <h2 id="park-list-heading" tabindex="-1">Parks</h2>
+          <ul id="park-list" class="park-list"></ul>
+        </section>
+
+        <footer class="panel-footer">
+          <p>
+            A personal learning project. Park data from the
+            <a href="https://www.nps.gov/subjects/developer/">NPS Data API</a>; map by the
+            <a href="https://developers.arcgis.com/javascript/latest/">ArcGIS Maps SDK for JavaScript</a>.
+          </p>
+        </footer>
+      </aside>
+
+      <main class="map-wrap" aria-labelledby="map-heading">
+        <h2 id="map-heading" class="visually-hidden">Map</h2>
+        <div
+          id="map"
+          class="map"
+          aria-describedby="map-help"
+        ></div>
+        <p id="map-help" class="visually-hidden">
+          Interactive map. When focused, use arrow keys to pan and plus or minus to zoom. The park
+          list has the same information.
+        </p>
+      </main>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

@@ -1,0 +1,15 @@
+/** App settings. Home is a city center, not a street address. */
+export const HOME = {
+  name: "Woodinville, WA",
+  longitude: -122.1635,
+  latitude: 47.7543,
+};
+
+export const DEFAULT_RADIUS_MILES = 300;
+
+const base = import.meta.env.BASE_URL;
+export const PARKS_URL = `${base}data/parks.geojson`;
+export const VISITED_URL = `${base}data/visited.json`;
+
+/** Optional. Without a key the map falls back to the OpenStreetMap basemap. */
+export const ARCGIS_API_KEY: string | undefined = import.meta.env.VITE_ARCGIS_API_KEY || undefined;
