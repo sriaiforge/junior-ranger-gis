@@ -44,6 +44,20 @@ const state = {
   dnrSites: [] as NearbySite[],
 };
 
+// After a deploy, a page loaded from the old build can ask for code files that no
+// longer exist. Reload once to pick up the new build instead of failing.
+const RELOAD_FLAG = "reloaded-after-deploy";
+window.addEventListener("vite:preloadError", (event) => {
+  try {
+    if (sessionStorage.getItem(RELOAD_FLAG)) return;
+    sessionStorage.setItem(RELOAD_FLAG, "1");
+  } catch {
+    return;
+  }
+  event.preventDefault();
+  window.location.reload();
+});
+
 const WASHINGTON = new Extent({
   xmin: -124.8,
   ymin: 45.5,
@@ -391,6 +405,12 @@ async function start(): Promise<void> {
   drawHome();
 
   wireUi();
+  // Loaded cleanly, so a future deploy may trigger one reload again.
+  try {
+    sessionStorage.removeItem(RELOAD_FLAG);
+  } catch {
+    // Storage unavailable (e.g. private mode); nothing to clear.
+  }
 }
 
 start().catch((error) => {
