@@ -50,15 +50,17 @@ GeoJSON and spatial analysis, drawing on my background in TypeScript and accessi
 ## How it works
 
 ```
-scripts/fetch_parks.py ──► public/data/parks.geojson ─┐
-                                                      ├─► src/parks.ts (merge) ─► GeoJSONLayer
-public/data/visited.json ──► src/visited.ts ──────────┘
+scripts/fetch_parks.py ──► public/data/parks.geojson ──────────┐
+                                                               ├─► src/parks.ts (merge) ─► GeoJSONLayer
+ArcGIS hosted feature layer ─┐                                 │
+  (fallback: visited.json) ──┴─► src/visited.ts ───────────────┘
 ```
 
 | File | Purpose |
 | --- | --- |
 | `scripts/fetch_parks.py` | NPS API → GeoJSON (standard library only) |
-| `src/visited.ts` | The only module that knows where visited status is stored |
+| `scripts/export_visits.py` | Visit list → GeoJSON points for publishing as a hosted layer |
+| `src/visited.ts` | The only module that knows where visited status is stored (hosted layer or JSON) |
 | `src/parks.ts` | Joins visits onto park features |
 | `src/map.ts` | Map, basemap, layer, renderer, pop-up |
 | `src/analysis.ts` | Buffer, spatial query, distance |
@@ -139,8 +141,20 @@ Contiguous Albers Equal Area.
 
 ## Mark a park as visited
 
-Add the park's 4-letter NPS code (the `parkCode` in `parks.geojson`, also in its nps.gov URL)
-to `public/data/visited.json`:
+The visit list lives in an **ArcGIS hosted feature layer** ("Junior Ranger visits"), one point
+per visited park with fields `park_code`, `park_name`, `visited_on` and `note`. The site reads it
+when the page loads, so adding a visit in ArcGIS shows up on the map **without a redeploy**.
+
+- **Add a visit:** open the layer in ArcGIS Map Viewer, add a point at the park, and fill in
+  `park_code` (the park's 4-letter NPS code, also in its nps.gov URL, e.g. `mora`).
+- **Access:** free ArcGIS Location Platform layers can't be shared publicly, so the site reads
+  the layer with the same referrer-restricted API key it uses for the basemap. That key was
+  granted read access to this one item.
+- **Config:** the layer URL is the repo variable `VITE_VISITS_LAYER_URL` (not a secret), ending
+  in `/FeatureServer/0`.
+
+**Fallback:** if `VITE_VISITS_LAYER_URL` isn't set or the layer can't be reached, the site uses
+`public/data/visited.json`. The page footer says which source it used.
 
 ```json
 {
@@ -150,18 +164,23 @@ to `public/data/visited.json`:
 }
 ```
 
+To publish a new layer from the JSON list, run `python3 scripts/export_visits.py` and upload
+`exports/visits.geojson` in ArcGIS as a hosted feature layer.
+
 ## Deploy (GitHub Pages)
 
 1. Commit `public/data/parks.geojson` after running `npm run data`.
 2. Push to GitHub. In **Settings → Pages**, set **Source** to **GitHub Actions**.
-3. Optional: add a repo secret `VITE_ARCGIS_API_KEY`.
-4. Each push to `main` runs `.github/workflows/deploy.yml`.
+3. Optional: add a repo **secret** `VITE_ARCGIS_API_KEY` (Esri basemap, geocoding, hosted layer
+   access) and a repo **variable** `VITE_VISITS_LAYER_URL` (hosted visits layer).
+4. Each push to `main` runs `.github/workflows/deploy.yml`. After editing visits in ArcGIS,
+   no deploy is needed.
 
 ## Roadmap
 
 - [x] Load the parks into **PostGIS** and run the distance query in SQL (`ST_DWithin` on `geography`)
 - [ ] Serve the PostGIS query live (e.g. a Supabase function) with a fallback to the browser query
-- [ ] Move visited status to an **ArcGIS Online hosted feature layer**
+- [x] Move visited status to an **ArcGIS hosted feature layer**
 - [ ] Check in from the field with **ArcGIS Field Maps** or **Survey123**
 - [x] Group nearby unvisited parks into road trips (DBSCAN clustering, in SQL)
 - [ ] Show the road-trip clusters on the map
