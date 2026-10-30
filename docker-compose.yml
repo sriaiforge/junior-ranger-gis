@@ -1,0 +1,24 @@
+# Local PostGIS database for the spatial SQL in db/.
+# Start: npm run db:up    Load data: npm run db:load    Shell: npm run db:psql
+services:
+  db:
+    build: ./db
+    image: junior-ranger-postgis:17
+    environment:
+      POSTGRES_DB: junior_ranger
+      POSTGRES_USER: ranger
+      # Local development only; the port is bound to this machine.
+      POSTGRES_PASSWORD: ranger
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./db:/db:ro
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ranger -d junior_ranger"]
+      interval: 2s
+      retries: 30
+
+volumes:
+  pgdata:

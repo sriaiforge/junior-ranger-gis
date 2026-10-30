@@ -78,6 +78,55 @@ npm run dev
   Place search works either way: with a key it uses the current geocoding service, and without one
   it uses the public World Geocoder endpoint, which allows anonymous searches that aren't stored.
 
+## Spatial SQL with PostGIS
+
+The same parks are also loaded into a local **PostgreSQL 17 + PostGIS 3** database (Docker), where
+the analysis runs as SQL. The live site doesn't use the database (GitHub Pages only serves static
+files); this part shows the data modeling and spatial SQL side.
+
+```bash
+npm run db:up       # build and start the database (Docker; db/Dockerfile)
+npm run db:load     # load parks.geojson + visited.json (scripts/load_db.py)
+npm run db:queries  # run db/queries.sql
+npm run db:psql     # interactive SQL shell
+npm run db:down     # stop it
+```
+
+On a Mac without Docker Desktop, [Colima](https://github.com/abiosoft/colima) works:
+`brew install colima docker docker-compose && colima start`.
+
+**Schema** ([db/schema.sql](db/schema.sql)): `parks` stores each park's location as
+`geography(Point, 4326)`, so distances are true meters on the WGS84 ellipsoid. A GiST index covers
+that column. `visits` has a foreign key to `parks`, and a `park_status` view joins the two.
+
+**Queries** ([db/queries.sql](db/queries.sql)):
+
+| # | Question | PostGIS features |
+| --- | --- | --- |
+| 1 | Unvisited parks within 300 miles of home, nearest first | `ST_DWithin`, `ST_Distance` on `geography` |
+| 2 | Progress by state | `unnest` of a `text[]` column, `FILTER` aggregates |
+| 3 | Nearest unvisited park to each visited park | `CROSS JOIN LATERAL` + KNN `<->` operator |
+| 4 | Road-trip clusters of unvisited parks | `ST_Transform` to EPSG:5070, `ST_ClusterDBSCAN` |
+| 5 | Does query 1 use the spatial index? | `EXPLAIN` → `Bitmap Index Scan on parks_location_gix` |
+
+Query 1 returns the same 9 parks and distances as the browser-side analysis on the live map:
+
+```
+                    name                    |     states     | miles
+--------------------------------------------+----------------+-------
+ Ebey's Landing National Historical Reserve | WA             |    40
+ Mount Rainier National Park                | WA             |    65
+ San Juan Island National Historical Park   | WA             |    67
+ Olympic National Park                      | WA             |    70
+ Fort Vancouver National Historic Site      | OR, WA         |   149
+ ...
+```
+
+Query 4 finds trip-sized groups, for example Mount Rushmore + Badlands + Jewel Cave + Wind Cave,
+or Mesa Verde + Hovenweep + Aztec Ruins. DBSCAN groups parks that are each within 50 miles of another
+park in the group. It needs planar coordinates, so the points are first projected to USA
+Contiguous Albers Equal Area.
+
 ## Mark a park as visited
 
 Add the park's 4-letter NPS code (the `parkCode` in `parks.geojson`, also in its nps.gov URL)
@@ -100,10 +149,12 @@ to `public/data/visited.json`:
 
 ## Roadmap
 
-- [ ] Load the parks into **PostGIS** and run the distance query in SQL (`ST_DWithin` on `geography`)
+- [x] Load the parks into **PostGIS** and run the distance query in SQL (`ST_DWithin` on `geography`)
+- [ ] Serve the PostGIS query live (e.g. a Supabase function) with a fallback to the browser query
 - [ ] Move visited status to an **ArcGIS Online hosted feature layer**
 - [ ] Check in from the field with **ArcGIS Field Maps** or **Survey123**
-- [ ] Group nearby unvisited parks into road trips (DBSCAN clustering)
+- [x] Group nearby unvisited parks into road trips (DBSCAN clustering, in SQL)
+- [ ] Show the road-trip clusters on the map
 - [ ] Add **Washington DNR** open data: state trust lands, recreation sites, wildfire risk
 - [ ] Automated accessibility checks (axe) in CI
 
