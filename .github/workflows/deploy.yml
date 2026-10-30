@@ -28,6 +28,8 @@ jobs:
         env:
           # Optional repo secret. Without it the map uses the OpenStreetMap basemap.
           VITE_ARCGIS_API_KEY: ${{ secrets.VITE_ARCGIS_API_KEY }}
+          # Optional repo variable (not secret): hosted feature layer with the visit list.
+          VITE_VISITS_LAYER_URL: ${{ vars.VITE_VISITS_LAYER_URL }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

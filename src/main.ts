@@ -27,6 +27,7 @@ const els = {
   nearbyForm: byId<HTMLFormElement>("nearby-form"),
   clearNearby: byId<HTMLButtonElement>("clear-nearby"),
   origin: byId<HTMLInputElement>("origin"),
+  visitSource: byId<HTMLSpanElement>("visit-source"),
   toggleRec: byId<HTMLInputElement>("toggle-rec"),
   toggleTrust: byId<HTMLInputElement>("toggle-trust"),
   zoomWa: byId<HTMLButtonElement>("zoom-wa"),
@@ -393,7 +394,11 @@ async function start(): Promise<void> {
   els.origin.placeholder = `Home (${HOME.name})`;
   els.radius.value = String(DEFAULT_RADIUS_MILES);
 
-  const visits = await loadVisits();
+  const { visits, source } = await loadVisits();
+  els.visitSource.textContent =
+    source === "hosted-layer"
+      ? "Visit list: ArcGIS hosted feature layer."
+      : "Visit list: visited.json in the repo.";
   const data = await loadParks(visits);
   parks = data.parks;
   updateProgress();
