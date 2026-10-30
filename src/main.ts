@@ -3,6 +3,7 @@ import "./style.css";
 
 import Graphic from "@arcgis/core/Graphic.js";
 import type Point from "@arcgis/core/geometry/Point.js";
+import Extent from "@arcgis/core/geometry/Extent.js";
 import FeatureFilter from "@arcgis/core/layers/support/FeatureFilter.js";
 import FeatureEffect from "@arcgis/core/layers/support/FeatureEffect.js";
 import type GeoJSONLayerView from "@arcgis/core/views/layers/GeoJSONLayerView.js";
@@ -12,6 +13,7 @@ import { loadParks, type Park } from "./parks";
 import { createMap, type ParkMap } from "./map";
 import { findUnvisitedNearby, homePoint, type NearbyResult } from "./analysis";
 import { findPlace, type Place } from "./geocode";
+import { dnrSitesWithin, type NearbySite } from "./dnr";
 
 type VisitedFilter = "all" | "visited" | "unvisited";
 
@@ -25,6 +27,12 @@ const els = {
   nearbyForm: byId<HTMLFormElement>("nearby-form"),
   clearNearby: byId<HTMLButtonElement>("clear-nearby"),
   origin: byId<HTMLInputElement>("origin"),
+  toggleRec: byId<HTMLInputElement>("toggle-rec"),
+  toggleTrust: byId<HTMLInputElement>("toggle-trust"),
+  zoomWa: byId<HTMLButtonElement>("zoom-wa"),
+  dnrNearby: byId<HTMLElement>("dnr-nearby"),
+  dnrHeading: byId<HTMLHeadingElement>("dnr-nearby-heading"),
+  dnrList: byId<HTMLUListElement>("dnr-list"),
   map: byId<HTMLDivElement>("map"),
 };
 
@@ -33,7 +41,16 @@ const state = {
   search: "",
   nearby: null as NearbyResult | null,
   nearbyLabel: HOME.name,
+  dnrSites: [] as NearbySite[],
 };
+
+const WASHINGTON = new Extent({
+  xmin: -124.8,
+  ymin: 45.5,
+  xmax: -116.9,
+  ymax: 49.0,
+  spatialReference: { wkid: 4326 },
+});
 
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -143,8 +160,10 @@ function renderList(): void {
     els.list.append(li);
   }
 
+  const dnr = state.dnrSites.length;
+  const dnrNote = dnr ? ` Also ${dnr} Washington DNR recreation ${dnr === 1 ? "site" : "sites"}, listed after the parks.` : "";
   const where = state.nearby
-    ? `${shown.length} unvisited ${shown.length === 1 ? "park" : "parks"} within ${els.radius.value} miles of ${state.nearbyLabel}, nearest first.`
+    ? `${shown.length} unvisited ${shown.length === 1 ? "park" : "parks"} within ${els.radius.value} miles of ${state.nearbyLabel}, nearest first.${dnrNote}`
     : `Showing ${shown.length} of ${parks.length} parks.`;
   announce(where);
 }
@@ -245,6 +264,15 @@ async function runNearby(miles: number, originText: string): Promise<void> {
     excludedEffect: "opacity(25%) grayscale(100%)",
   });
 
+  // Second, server-side query: DNR recreation sites inside the same circle.
+  try {
+    state.dnrSites = await dnrSitesWithin(parkMap.recSites, result.buffer, origin.point);
+  } catch (error) {
+    console.warn("DNR recreation sites query failed.", error);
+    state.dnrSites = [];
+  }
+  renderDnr();
+
   els.clearNearby.hidden = false;
   renderList();
   if (result.buffer.extent) {
@@ -252,8 +280,38 @@ async function runNearby(miles: number, originText: string): Promise<void> {
   }
 }
 
+function renderDnr(): void {
+  const sites = state.dnrSites;
+  els.dnrNearby.hidden = sites.length === 0;
+  els.dnrHeading.textContent = `Washington DNR recreation sites in this area (${sites.length})`;
+  els.dnrList.replaceChildren(
+    ...sites.map((site) => {
+      const li = document.createElement("li");
+      let name: HTMLElement;
+      if (/^https:\/\//.test(site.website)) {
+        const a = document.createElement("a");
+        a.href = site.website;
+        a.target = "_blank";
+        a.rel = "noopener";
+        name = a;
+      } else {
+        name = document.createElement("span");
+        name.className = "park-name";
+      }
+      name.textContent = site.name;
+      const meta = document.createElement("span");
+      meta.className = "park-meta";
+      meta.textContent = `${site.type} · ${Math.round(site.miles)} miles away`;
+      li.append(name, meta);
+      return li;
+    }),
+  );
+}
+
 function clearNearby(): void {
   state.nearby = null;
+  state.dnrSites = [];
+  renderDnr();
   parkMap.layer.featureEffect = null;
   removeSearchGraphics();
   els.clearNearby.hidden = true;
@@ -285,6 +343,18 @@ function wireUi(): void {
     runNearby(miles, els.origin.value).catch(showError);
   });
   els.clearNearby.addEventListener("click", clearNearby);
+
+  els.toggleRec.addEventListener("change", () => {
+    parkMap.recSites.visible = els.toggleRec.checked;
+  });
+  els.toggleTrust.addEventListener("change", () => {
+    parkMap.trustLands.visible = els.toggleTrust.checked;
+  });
+  els.zoomWa.addEventListener("click", () => {
+    parkMap.view
+      .goTo(WASHINGTON, { animate: !reduceMotion })
+      .catch(showError);
+  });
   // Enabled only once the map is ready, so an early submit can't reload the page.
   els.nearbyForm.querySelector<HTMLButtonElement>('button[type="submit"]')!.disabled = false;
 

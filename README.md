@@ -29,6 +29,15 @@ GeoJSON and spatial analysis, drawing on my background in TypeScript and accessi
     it isn't confused with a town of the same name.
   - Anything else is geocoded with the ArcGIS World Geocoding Service (`locator.addressToLocations`).
   - Leave the box blank to search from home.
+- **Washington DNR open data.** Two live layers from DNR's public ArcGIS Server, used directly
+  (nothing copied into this repo):
+  - **Recreation sites** (219 campgrounds, trailheads, huts and day-use areas): a `FeatureLayer`
+    with popups.
+  - **State trust lands** (13,500+ parcels): a `MapImageLayer` that DNR's server renders. Popups
+    show the trust (e.g. Common School), county and DNR region.
+  - The nearby search also sends its search circle to DNR's server as a **server-side spatial
+    query** and lists the DNR recreation sites inside it, nearest first. For example, 54 within
+    60 miles of Woodinville.
 - **Accessibility (WCAG 2.2 AA target).**
   - Every map feature is also in an HTML list, so the map isn't the only way to get the information.
   - Visited and unvisited parks differ by shape (circle vs. diamond), not only by color (1.4.1).
@@ -54,6 +63,7 @@ public/data/visited.json ──► src/visited.ts ──────────
 | `src/map.ts` | Map, basemap, layer, renderer, pop-up |
 | `src/analysis.ts` | Buffer, spatial query, distance |
 | `src/geocode.ts` | Place name → point (park names, then ArcGIS geocoding) |
+| `src/dnr.ts` | Washington DNR layers and the server-side nearby query |
 | `src/main.ts` | UI: filters, list, live-region messages |
 | `src/config.ts` | Home location, default radius |
 
@@ -155,12 +165,15 @@ to `public/data/visited.json`:
 - [ ] Check in from the field with **ArcGIS Field Maps** or **Survey123**
 - [x] Group nearby unvisited parks into road trips (DBSCAN clustering, in SQL)
 - [ ] Show the road-trip clusters on the map
-- [ ] Add **Washington DNR** open data: state trust lands, recreation sites, wildfire risk
+- [x] Add **Washington DNR** open data: state trust lands, recreation sites
+- [ ] Add DNR wildfire risk data
 - [ ] Automated accessibility checks (axe) in CI
 
 ## Data and credits
 
 - Park data: [NPS Data API](https://www.nps.gov/subjects/developer/api-documentation.htm)
   (public domain U.S. government data).
+- Washington DNR recreation sites and managed lands: [Washington State Department of Natural
+  Resources](https://dnr.wa.gov/) public GIS services (provided "as is").
 - Map: [ArcGIS Maps SDK for JavaScript](https://developers.arcgis.com/javascript/latest/), Esri.
 - Basemap: Esri or © OpenStreetMap contributors.

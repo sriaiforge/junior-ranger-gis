@@ -166,6 +166,38 @@ input[type="text"] {
   color: var(--text);
 }
 
+.check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+  margin-bottom: 4px;
+}
+.swatch {
+  display: inline-block;
+  width: 16px;
+  height: 12px;
+  border: 1px solid #555;
+  background: linear-gradient(90deg, #c9a46c 50%, #8fbf7f 50%);
+}
+
+.dnr-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--border);
+}
+.dnr-list li {
+  display: grid;
+  gap: 2px;
+  padding: 8px 4px;
+  border-bottom: 1px solid var(--border);
+}
+.dnr-list a {
+  color: var(--accent);
+  font-weight: 600;
+}
+
 .button-row {
   display: flex;
   gap: 8px;

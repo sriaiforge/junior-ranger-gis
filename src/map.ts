@@ -9,6 +9,9 @@ import SimpleMarkerSymbol from "@arcgis/core/symbols/SimpleMarkerSymbol.js";
 import PopupTemplate from "@arcgis/core/PopupTemplate.js";
 import { ARCGIS_API_KEY } from "./config";
 import type { ParkData } from "./parks";
+import { createRecreationSites, createTrustLands } from "./dnr";
+import type FeatureLayer from "@arcgis/core/layers/FeatureLayer.js";
+import type MapImageLayer from "@arcgis/core/layers/MapImageLayer.js";
 
 export const VISITED_COLOR = "#1b7a3d";
 export const UNVISITED_COLOR = "#8a4b08";
@@ -65,6 +68,8 @@ function basemap(): Basemap | string {
 export interface ParkMap {
   view: MapView;
   layer: GeoJSONLayer;
+  recSites: FeatureLayer;
+  trustLands: MapImageLayer;
 }
 
 export async function createMap(container: HTMLDivElement, data: ParkData): Promise<ParkMap> {
@@ -78,7 +83,10 @@ export async function createMap(container: HTMLDivElement, data: ParkData): Prom
     popupTemplate,
   });
 
-  const map = new Map({ basemap: basemap(), layers: [layer] });
+  // Washington DNR layers sit under the parks so park symbols stay on top.
+  const trustLands = createTrustLands();
+  const recSites = createRecreationSites();
+  const map = new Map({ basemap: basemap(), layers: [trustLands, recSites, layer] });
 
   const view = new MapView({
     container,
@@ -90,5 +98,5 @@ export async function createMap(container: HTMLDivElement, data: ParkData): Prom
 
   await view.when();
   await layer.load();
-  return { view, layer };
+  return { view, layer, recSites, trustLands };
 }

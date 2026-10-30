@@ -71,6 +71,29 @@
           </form>
         </section>
 
+        <section class="controls" aria-labelledby="dnr-heading">
+          <h2 id="dnr-heading">Washington DNR layers</h2>
+          <p class="hint">
+            Live data from the Washington State Department of Natural Resources, shown when the map
+            is zoomed in to state level.
+          </p>
+          <label class="check">
+            <input type="checkbox" id="toggle-rec" checked />
+            <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+              <path d="M8 2 14.5 14H1.5Z" fill="#0b6e6e" stroke="#fff" stroke-width="1" />
+            </svg>
+            Recreation sites (campgrounds, trailheads, huts)
+          </label>
+          <label class="check">
+            <input type="checkbox" id="toggle-trust" />
+            <span class="swatch" aria-hidden="true"></span>
+            State trust lands (colored by trust; select an area for details)
+          </label>
+          <div class="button-row">
+            <button type="button" id="zoom-wa" class="secondary">Zoom to Washington</button>
+          </div>
+        </section>
+
         <p id="status" class="status" role="status" aria-live="polite"></p>
 
         <section class="list-section" aria-labelledby="park-list-heading">
@@ -78,10 +101,16 @@
           <ul id="park-list" class="park-list"></ul>
         </section>
 
+        <section id="dnr-nearby" class="list-section" aria-labelledby="dnr-nearby-heading" hidden>
+          <h2 id="dnr-nearby-heading">DNR recreation sites in this area</h2>
+          <ul id="dnr-list" class="dnr-list"></ul>
+        </section>
+
         <footer class="panel-footer">
           <p>
             A personal learning project. Park data from the
-            <a href="https://www.nps.gov/subjects/developer/">NPS Data API</a>; map by the
+            <a href="https://www.nps.gov/subjects/developer/">NPS Data API</a> and
+            <a href="https://dnr.wa.gov/">Washington DNR</a> open GIS data; map by the
             <a href="https://developers.arcgis.com/javascript/latest/">ArcGIS Maps SDK for JavaScript</a>.
           </p>
         </footer>
