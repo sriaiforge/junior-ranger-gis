@@ -48,6 +48,14 @@ const popupTemplate = new PopupTemplate({
   title: "{name}",
   expressionInfos: [
     {
+      // Google Maps directions URL (no API key needed); starts from the visitor's location.
+      // Destination is the park name + first state, which Google resolves to the park itself.
+      name: "directions",
+      title: "Directions",
+      expression:
+        '"https://www.google.com/maps/dir/?api=1&destination=" + UrlEncode($feature.name + ", " + Split($feature.states, ",")[0])',
+    },
+    {
       name: "status",
       title: "Visit status",
       expression:
@@ -56,7 +64,8 @@ const popupTemplate = new PopupTemplate({
   ],
   content:
     "<p>{designation} · {states}</p><p><strong>{expression/status}</strong></p>" +
-    '<p><a href="{url}" target="_blank" rel="noopener">Park page on nps.gov</a></p>',
+    '<p><a href="{url}" target="_blank" rel="noopener">Park page on nps.gov</a> · ' +
+    '<a href="{expression/directions}" target="_blank" rel="noopener">Directions (Google Maps)</a></p>',
 });
 
 function basemap(): Basemap | string {

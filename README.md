@@ -14,7 +14,7 @@ GeoJSON and spatial analysis, drawing on my background in TypeScript and accessi
 - **NPS data pipeline.** A Python script uses the NPS Data API to find every park with the
   "Junior Ranger Program" activity, joins in each park's coordinates, and writes GeoJSON.
 - **ArcGIS map.** The ArcGIS Maps SDK for JavaScript (5.x) draws the parks as a `GeoJSONLayer` with a
-  `UniqueValueRenderer` and pop-ups built with Arcade expressions.
+  `UniqueValueRenderer` and pop-ups built with Arcade expressions, including a Google Maps directions link for each park and DNR site.
 - **Visited / not visited filter.** Uses a client-side `FeatureFilter` on the layer view, plus a
   search by park name or state.
 - **Distance query.** "Unvisited parks within N miles of" home (Woodinville, WA) or any place:

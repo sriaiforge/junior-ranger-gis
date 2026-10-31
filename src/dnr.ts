@@ -34,7 +34,7 @@ export function createRecreationSites(): FeatureLayer {
   return new FeatureLayer({
     url: REC_SITES_URL,
     title: "DNR recreation sites",
-    outFields: ["NAME", "SITE_TYPE", "ACTIVITIES", "WEBSITE"],
+    outFields: ["NAME", "SITE_TYPE", "ACTIVITIES", "WEBSITE", "LAT", "LONG_"],
     minScale: STATE_SCALE,
     renderer: {
       type: "simple",
@@ -48,10 +48,19 @@ export function createRecreationSites(): FeatureLayer {
     },
     popupTemplate: {
       title: "{NAME}",
-      expressionInfos: [{ name: "type", title: "Type", expression: siteTypeArcade }],
+      expressionInfos: [
+        { name: "type", title: "Type", expression: siteTypeArcade },
+        {
+          name: "directions",
+          title: "Directions",
+          expression:
+            '"https://www.google.com/maps/dir/?api=1&destination=" + $feature.LAT + "," + $feature.LONG_',
+        },
+      ],
       content:
         "<p><strong>{expression/type}</strong> · Washington DNR</p><p>{ACTIVITIES}</p>" +
-        '<p><a href="{WEBSITE}" target="_blank" rel="noopener">Site page on dnr.wa.gov</a></p>',
+        '<p><a href="{WEBSITE}" target="_blank" rel="noopener">Site page on dnr.wa.gov</a> · ' +
+        '<a href="{expression/directions}" target="_blank" rel="noopener">Directions (Google Maps)</a></p>',
     },
   });
 }
